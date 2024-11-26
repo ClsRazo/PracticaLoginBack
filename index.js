@@ -1,27 +1,29 @@
-const express = require("express"); //Se instala con npm install express
-const cors = require("cors"); //Se instala con npm install cors
-const bodyParser = require("body-parser"); //Se instala con npm install body-parser
-const mysql = require("mysql2"); //Se instala con npm install mysql2
+const express = require("express"); // Se instala con npm install express
+const cors = require("cors"); // Se instala con npm install cors
+const bodyParser = require("body-parser"); // Se instala con npm install body-parser
+const mysql = require("mysql2"); // Se instala con npm install mysql2
 //Para los JWT
-const jwt = require("jsonwebtoken"); //Se instala con npm install jsonwebtoken
-require("dotenv").config(); //Se instala con npm install dotenv
+const jwt = require("jsonwebtoken"); // Se instala con npm install jsonwebtoken
+require("dotenv").config(); // Se instala con npm install dotenv
+const crypto = require('crypto');
+const nodemailer = require('nodemailer'); // Instalar con npm install nodemailer
 
 const app = express();
 const PORT = 5000;
 
-//Middlewares
+// Middlewares
 app.use(cors());
 app.use(bodyParser.json());
 
-//Configuración para la BD
+// Configuración para la BD
 const db = mysql.createConnection({
   host: "localhost",
   user: "root",
-  password: "280103Ac+",
+  password: "root",
   database: "practica_login",
 });
 
-//Conexión a la BD
+// Conexión a la BD
 db.connect((err) => {
   if (err) {
     console.error("Error de conexión: " + err.stack);
@@ -29,6 +31,25 @@ db.connect((err) => {
   }
   console.log("Conexión exitosa a la BD");
 });
+
+// Almacenamiento TEMPORAL EH de tokens de restablecimiento (usar base de datos)
+const tokensRestablecimiento = {};
+
+// Transporte de Nodemailer (usar configuración de servicio de correo)
+const transporter = nodemailer.createTransport({
+  host: 'smtp.gmail.com',
+  port: 465,
+  secure: true,
+  auth: {
+    user: process.env.CORREO_USUARIO,
+    pass: process.env.CORREO_CONTRASENA
+  }
+  });
+
+transporter.verify().then(() => {
+  console.log('Transporte de correo listo');
+});
+
 
 //Rutas
 //------------------------------Raiz------------------------------
@@ -93,7 +114,118 @@ app.post("/register", (req, res) => {
   });
 });
 
-//------------------------------Iniciar el servidor------------------------------
+// ------------------------------Para solicitar restablecimiento de contraseña------------------------------
+app.post('/solicitar-restablecimiento', (req, res) => {
+  const { usuario, email } = req.body;
+  
+  console.log("Solicitud de restablecimiento recibida:", { usuario, email });
+
+  // Verificar si el usuario existe
+  const consulta = "SELECT * FROM usuarios WHERE username = ? AND email = ?";
+  console.log("Consulta SQL:", consulta, "Valores:", [usuario, email]);
+
+  db.query(consulta, [usuario, email], (err, resultados) => {
+    if (err) {
+      console.log("Error en la consulta:", err);
+      return res.status(500).json({ error: "Error en la consulta" });
+    }
+
+    if (resultados.length === 0) {
+      console.log("Usuario no encontrado:", { usuario, email });
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
+
+    console.log("Usuario encontrado:", resultados);
+
+    // Generar token de restablecimiento
+    const tokenRestablecimiento = crypto.randomBytes(6).toString('hex');
+    console.log("Token generado:", tokenRestablecimiento);
+    
+    // Almacenar token de restablecimiento con marca de tiempo
+    tokensRestablecimiento[usuario] = {
+      token: tokenRestablecimiento,
+      creadoEn: Date.now()
+    };
+    console.log("Tokens almacenados:", tokensRestablecimiento);
+
+    // Enviar correo
+    const opcionesCorreo = {
+      from: process.env.CORREO_USUARIO,
+      to: email,
+      subject: 'Restablecimiento de Contraseña',
+      text: `Tu código de restablecimiento de contraseña es: ${tokenRestablecimiento}\n\n` +
+            `Este código expirará en 15 minutos.`
+    };
+
+    transporter.sendMail(opcionesCorreo, (error, info) => {
+      if (error) {
+        console.log("Error al enviar el correo:", error);
+        return res.status(500).json({ error: "Error al enviar el correo" });
+      }
+      
+      console.log("Correo enviado con éxito:", info);
+      res.json({ mensaje: "Código de restablecimiento enviado" });
+    });
+  });
+});
+
+// ------------------------------Para verificar token de restablecimiento------------------------------
+app.post('/verificar-token-restablecimiento', (req, res) => {
+  const { usuario, tokenRestablecimiento } = req.body;
+  
+  console.log("Verificación de token recibida:", { usuario, tokenRestablecimiento });
+
+  const tokenGuardado = tokensRestablecimiento[usuario];
+  console.log("Token guardado:", tokenGuardado);
+
+  // Verificar si el token existe y no ha expirado (15 minutos)
+  if (!tokenGuardado || 
+      tokenGuardado.token !== tokenRestablecimiento || 
+      (Date.now() - tokenGuardado.creadoEn) > 15 * 60 * 1000) {
+    console.log("Token inválido o expirado:", { usuario, tokenRestablecimiento });
+    return res.status(400).json({ error: "Token inválido o expirado" });
+  }
+
+  console.log("Token verificado correctamente");
+  res.json({ mensaje: "Token verificado correctamente" });
+});
+
+// ------------------------------Para restablecer contraseña------------------------------
+app.post('/restablecer-contrasena', (req, res) => {
+  const { usuario, tokenRestablecimiento, nuevaContraseña } = req.body;
+  
+  console.log("Solicitud de restablecimiento de contraseña:", { usuario, tokenRestablecimiento, nuevaContraseña });
+
+  const tokenGuardado = tokensRestablecimiento[usuario];
+  console.log("Token guardado:", tokenGuardado);
+
+  // Verificar token nuevamente
+  if (!tokenGuardado || 
+      tokenGuardado.token !== tokenRestablecimiento || 
+      (Date.now() - tokenGuardado.creadoEn) > 15 * 60 * 1000) {
+    console.log("Token inválido o expirado:", { usuario, tokenRestablecimiento });
+    return res.status(400).json({ error: "Token inválido o expirado" });
+  }
+
+  // Actualizar contraseña en base de datos
+  const consultaActualizar = "UPDATE usuarios SET password = ? WHERE username = ?";
+  console.log("Consulta de actualización de contraseña:", consultaActualizar, "Valores:", [nuevaContraseña, usuario]);
+
+  db.query(consultaActualizar, [nuevaContraseña, usuario], (err, resultado) => {
+    if (err) {
+      console.log("Error al actualizar la contraseña:", err);
+      return res.status(500).json({ error: "Error al actualizar la contraseña" });
+    }
+
+    // Eliminar el token de restablecimiento utilizado
+    delete tokensRestablecimiento[usuario];
+    console.log("Token eliminado:", usuario);
+
+    res.json({ mensaje: "Contraseña restablecida exitosamente" });
+  });
+});
+
+// Iniciar el servidor
 app.listen(PORT, () => {
   console.log(`Servidor corriendo en http://localhost:${PORT}`);
 });
