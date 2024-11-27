@@ -6,11 +6,6 @@ USE practica_login;
 CREATE TABLE usuarios (
     username VARCHAR(50) NOT NULL,
     email VARCHAR(50) PRIMARY KEY,
-    password VARCHAR(255) NOT NULL
+    password VARCHAR(255) NOT NULL,
+    token VARCHAR(48) NOT NULL
 );
-
--- Se insertan 3 usuarios de prueba
-INSERT INTO usuarios (username, email, password)
-VALUES ('usuario1', 'correo1@gmail.com', '470ea79e04621c2e126e3a0a560bb1d94878809e7b7df20aa04f1662ecddf102'),
-       ('usuario2', 'correo2@gmail.com', '470ea79e04621c2e126e3a0a560bb1d94878809e7b7df20aa04f1662ecddf102'),
-       ('usuario3', 'correo3@gmail.com', '470ea79e04621c2e126e3a0a560bb1d94878809e7b7df20aa04f1662ecddf102');
