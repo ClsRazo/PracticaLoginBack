@@ -154,10 +154,104 @@ app.post('/solicitar-restablecimiento', (req, res) => {
         from: process.env.CORREO_USUARIO,
         to: email,
         subject: 'Restablecimiento de Contraseña',
-        text: `Tu código de restablecimiento de contraseña es: ${tokenRestablecimiento}\n\n` +
-              `Este código expirará en 15 minutos.`
+        html: `
+          <html>
+            <head>
+              <style>
+                body {
+                  font-family: Arial, sans-serif;
+                  background-color: #ffffff;
+                  margin: 0;
+                  padding: 0;
+                  color: #000000;
+                }
+                .container {
+                  width: 100%;
+                  max-width: 600px;
+                  margin: 0 auto;
+                  padding: 20px;
+                  border: 2px solid #000000;
+                  box-sizing: border-box;
+                }
+                .header {
+                  text-align: center;
+                  background-color: #000000;
+                  color: #ffffff;
+                  padding: 15px;
+                }
+                .header h1 {
+                  margin: 0;
+                  font-size: 24px;
+                  font-weight: bold;
+                }
+                .content {
+                  padding: 20px;
+                  text-align: center;
+                }
+                .content p {
+                  font-size: 16px;
+                  line-height: 1.6;
+                  margin: 15px 0;
+                }
+                .code {
+                  display: inline-block;
+                  background-color: #000000;
+                  color: #ffffff;
+                  font-size: 24px;
+                  font-weight: bold;
+                  padding: 10px 20px;
+                  margin: 20px 0;
+                  letter-spacing: 2px;
+                }
+                .button {
+                  display: inline-block;
+                  background-color: #ffffff;
+                  color: #000000;
+                  padding: 12px 24px;
+                  font-size: 16px;
+                  text-decoration: none;
+                  margin-top: 20px;
+                  border: 2px solid #000000;
+                  transition: background-color 0.3s ease;
+                }
+                .button:hover {
+                  background-color: #ffffff;
+                  color: #000000;
+                  border: 2px solid #000000;
+                }
+                .footer {
+                  text-align: center;
+                  font-size: 12px;
+                  padding: 20px;
+                  border-top: 1px solid #000000;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>Restablecimiento de Contraseña</h1>
+                </div>
+                <div class="content">
+                  <p>Hola,</p>
+                  <p>Hemos recibido una solicitud para restablecer tu contraseña. Si no solicitaste este cambio, por favor ignora este correo.</p>
+                  <p>Tu código de restablecimiento de contraseña es:</p>
+                  <div class="code">${tokenRestablecimiento}</div>
+                  <p>Este código expirará en 15 minutos.</p>
+                  <p>Si no puedes restablecer tu contraseña o tienes alguna duda, por favor, contacta con nuestro soporte.</p>
+                  <a href="#" class="button">Restablecer Contraseña</a>
+                </div>
+                <div class="footer">
+                  <p>Si no has solicitado el restablecimiento de tu contraseña, puedes ignorar este mensaje.</p>
+                  <p>&copy; 2024 Criptografía Men y asociados S.A. de C.V. Todos los derechos reservados.</p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `
       };
-
+      
+      
       transporter.sendMail(opcionesCorreo, (error, info) => {
         if (error) {
           console.log("Error al enviar el correo:", error);
