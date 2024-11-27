@@ -9,13 +9,14 @@ CREATE TABLE usuarios (
     password VARCHAR(255) NOT NULL
 );
 
--- La tabla de tokens de restablecimiento se compone de 3 columnas: username, token y creado_en
+-- La tabla de tokens de restablecimiento se compone de 4 columnas: email, token, username y creado_en
 CREATE TABLE tokens_restablecimiento (
-    username VARCHAR(50) NOT NULL,
+    email VARCHAR(50) NOT NULL,
     token VARCHAR(255) NOT NULL,
+    username VARCHAR(50) NOT NULL,
     creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (username) REFERENCES usuarios(username),
-    PRIMARY KEY (username, token)
+    PRIMARY KEY (email, token),
+    FOREIGN KEY (email) REFERENCES usuarios(email)
 );
 
 -- Se insertan 3 usuarios de prueba

@@ -141,9 +141,9 @@ app.post('/solicitar-restablecimiento', (req, res) => {
     console.log("Token generado:", tokenRestablecimiento);
     
     // Almacenar token en la base de datos
-    const insertarToken = "INSERT INTO tokens_restablecimiento (username, token) VALUES (?, ?)";
+    const insertarToken = "INSERT INTO tokens_restablecimiento (email, token, username) VALUES (?, ?, ?)";
     
-    db.query(insertarToken, [username, tokenRestablecimiento], (err) => {
+    db.query(insertarToken, [email, tokenRestablecimiento, username], (err) => {
       if (err) {
         console.log("Error al guardar token:", err);
         return res.status(500).json({ error: "Error al generar token" });
@@ -177,25 +177,38 @@ app.post('/verificar-token-restablecimiento', (req, res) => {
   
   console.log("Verificación de token recibida:", { username, tokenRestablecimiento });
 
-  const consultaToken = `
-    SELECT * FROM tokens_restablecimiento 
-    WHERE username = ? AND token = ? 
-    AND TIMESTAMPDIFF(MINUTE, creado_en, NOW()) <= 15
-  `;
-
-  db.query(consultaToken, [username, tokenRestablecimiento], (err, resultados) => {
-    if (err) {
-      console.log("Error al verificar token:", err);
-      return res.status(500).json({ error: "Error al verificar token" });
+  // Primero, obtener el email asociado al username
+  const consultaEmail = "SELECT email FROM usuarios WHERE username = ?";
+  
+  db.query(consultaEmail, [username], (errEmail, resultadosEmail) => {
+    if (errEmail || resultadosEmail.length === 0) {
+      console.log("Error al obtener email:", errEmail);
+      return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    if (resultados.length === 0) {
-      console.log("Token inválido o expirado");
-      return res.status(400).json({ error: "Token inválido o expirado" });
-    }
+    const email = resultadosEmail[0].email;
 
-    console.log("Token verificado correctamente");
-    res.json({ mensaje: "Token verificado correctamente" });
+    const consultaToken = `
+      SELECT * FROM tokens_restablecimiento 
+      WHERE email = ? AND token = ? 
+      AND username = ?
+      AND TIMESTAMPDIFF(MINUTE, creado_en, NOW()) <= 15
+    `;
+
+    db.query(consultaToken, [email, tokenRestablecimiento, username], (err, resultados) => {
+      if (err) {
+        console.log("Error al verificar token:", err);
+        return res.status(500).json({ error: "Error al verificar token" });
+      }
+
+      if (resultados.length === 0) {
+        console.log("Token inválido o expirado");
+        return res.status(400).json({ error: "Token inválido o expirado" });
+      }
+
+      console.log("Token verificado correctamente");
+      res.json({ mensaje: "Token verificado correctamente" });
+    });
   });
 });
 
@@ -205,37 +218,50 @@ app.post('/restablecer-contrasena', (req, res) => {
   
   console.log("Solicitud de restablecimiento de contraseña:", { username, tokenRestablecimiento });
 
-  const consultaToken = `
-    SELECT * FROM tokens_restablecimiento 
-    WHERE username = ? AND token = ? 
-    AND TIMESTAMPDIFF(MINUTE, creado_en, NOW()) <= 15
-  `;
-
-  db.query(consultaToken, [username, tokenRestablecimiento], (err, resultados) => {
-    if (err) {
-      console.log("Error al verificar token:", err);
-      return res.status(500).json({ error: "Error al verificar token" });
+  // Primero, obtener el email asociado al username
+  const consultaEmail = "SELECT email FROM usuarios WHERE username = ?";
+  
+  db.query(consultaEmail, [username], (errEmail, resultadosEmail) => {
+    if (errEmail || resultadosEmail.length === 0) {
+      console.log("Error al obtener email:", errEmail);
+      return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    if (resultados.length === 0) {
-      console.log("Token inválido o expirado");
-      return res.status(400).json({ error: "Token inválido o expirado" });
-    }
+    const email = resultadosEmail[0].email;
 
-    // Actualizar contraseña en base de datos
-    const consultaActualizar = "UPDATE usuarios SET password = ? WHERE username = ?";
+    const consultaToken = `
+      SELECT * FROM tokens_restablecimiento 
+      WHERE email = ? AND token = ? 
+      AND username = ?
+      AND TIMESTAMPDIFF(MINUTE, creado_en, NOW()) <= 15
+    `;
 
-    db.query(consultaActualizar, [nuevaContraseña, username], (err) => {
+    db.query(consultaToken, [email, tokenRestablecimiento, username], (err, resultados) => {
       if (err) {
-        console.log("Error al actualizar la contraseña:", err);
-        return res.status(500).json({ error: "Error al actualizar la contraseña" });
+        console.log("Error al verificar token:", err);
+        return res.status(500).json({ error: "Error al verificar token" });
       }
 
-      // Eliminar token utilizado
-      const eliminarToken = "DELETE FROM tokens_restablecimiento WHERE username = ? AND token = ?";
-      db.query(eliminarToken, [username, tokenRestablecimiento]);
+      if (resultados.length === 0) {
+        console.log("Token inválido o expirado");
+        return res.status(400).json({ error: "Token inválido o expirado" });
+      }
 
-      res.json({ mensaje: "Contraseña restablecida exitosamente" });
+      // Actualizar contraseña en base de datos
+      const consultaActualizar = "UPDATE usuarios SET password = ? WHERE username = ?";
+
+      db.query(consultaActualizar, [nuevaContraseña, username], (err) => {
+        if (err) {
+          console.log("Error al actualizar la contraseña:", err);
+          return res.status(500).json({ error: "Error al actualizar la contraseña" });
+        }
+
+        // Eliminar token utilizado
+        const eliminarToken = "DELETE FROM tokens_restablecimiento WHERE email = ? AND token = ?";
+        db.query(eliminarToken, [email, tokenRestablecimiento]);
+
+        res.json({ mensaje: "Contraseña restablecida exitosamente" });
+      });
     });
   });
 });
