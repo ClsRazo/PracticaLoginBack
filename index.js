@@ -89,22 +89,22 @@ app.post("/login", (req, res) => {
   const {username, password} = req.body;
 
   //Checamos que exista el usuario en la BD
-  const query = "SELECT * FROM usuarios where username = ?";
+  const query = "SELECT * FROM usuarios where username = $1";
   //db. se usa para MySQL, para PostgreSQL se usa pool.
   pool.query(query, [username], (err, result) => {
     if (err) {
       console.error("Error en la consulta: " + err.stack);
-      return res.status(500).json({error: "Error en la consulta"});
+      return res.status(500).json({error: "Error en la consulta login"});
     }
 
     //Si no hay resultados
-    if (result.length === 0) {
+    if (result.rows.length === 0) {
       return res.status(401).json({error: "Usuario no encontrado"});
     }
 
     //¿Puede ser que haya más de un usuario con el mismo nombre?
     //Si no, entonces solo habrá un resultado
-    const usuario = result[0];
+    const usuario = result.rows[0];
     if (usuario.password === password) {
       //Generamos el token y lo enviamos
       const token = jwt.sign({email: usuario.email, username: usuario.username}, process.env.JWT_SECRET, {expiresIn: "1h"});
@@ -120,14 +120,14 @@ app.post("/register", (req, res) => {
   const {username, email, password} = req.body;
 
   //Comprobamos si el usuario ya existe
-  const query = "SELECT * FROM usuarios WHERE username = ?";
+  const query = "SELECT * FROM usuarios WHERE username = $1";
 
   pool.query(query, [username], (err, results) => {
     if (err) {
       return res.status(500).json({error: "Error en la consulta"});
     }
 
-    if (results.length > 0) {
+    if (results.rows.length > 0) {
       return res.status(400).json({error: "El usuario ya existe"});
     }
 
@@ -139,7 +139,7 @@ app.post("/register", (req, res) => {
 
     //Creamos el usuario en la BD
     //La parte de la verificación queda para después
-    const insertQuery = "INSERT INTO usuarios (username, email, password, token) VALUES (?, ?, ?, ?)";
+    const insertQuery = "INSERT INTO usuarios (username, email, password, token) VALUES ($1, $2, $3, $4)";
     pool.query(insertQuery, [username, email, password, token], (err, result) => {
       if (err) {
         return res.status(500).json({error: "Error al registrar el usuario"});
@@ -156,7 +156,7 @@ app.post('/solicitar-restablecimiento', (req, res) => {
   console.log("Solicitud de restablecimiento recibida:", { usuario, email });
 
   // Verificar si el usuario existe
-  const consulta = "SELECT * FROM usuarios WHERE username = ? AND email = ?";
+  const consulta = "SELECT * FROM usuarios WHERE username = $1 AND email = $2";
   console.log("Consulta SQL:", consulta, "Valores:", [usuario, email]);
 
   pool.query(consulta, [usuario, email], (err, resultados) => {
@@ -165,7 +165,7 @@ app.post('/solicitar-restablecimiento', (req, res) => {
       return res.status(500).json({ error: "Error en la consulta" });
     }
 
-    if (resultados.length === 0) {
+    if (resultados.rows.length === 0) {
       console.log("Usuario no encontrado:", { usuario, email });
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
@@ -243,7 +243,7 @@ app.post('/restablecer-contrasena', (req, res) => {
   }
 
   // Actualizar contraseña en base de datos
-  const consultaActualizar = "UPDATE usuarios SET password = ? WHERE username = ?";
+  const consultaActualizar = "UPDATE usuarios SET password = $1 WHERE username = $2";
   console.log("Consulta de actualización de contraseña:", consultaActualizar, "Valores:", [nuevaContraseña, usuario]);
 
   pool.query(consultaActualizar, [nuevaContraseña, usuario], (err, resultado) => {
@@ -262,5 +262,5 @@ app.post('/restablecer-contrasena', (req, res) => {
 
 // Iniciar el servidor
 app.listen(PORT, () => {
-  // console.log(`Servidor corriendo en http://localhost:${PORT}`);
+  console.log(`Servidor corriendo en https://practicaloginback.onrender.com`);
 });
