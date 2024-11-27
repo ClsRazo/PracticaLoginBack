@@ -151,114 +151,262 @@ app.post("/register", (req, res) => {
 
 // ------------------------------Para solicitar restablecimiento de contraseña------------------------------
 app.post('/solicitar-restablecimiento', (req, res) => {
-  const { usuario, email } = req.body;
+  const { username } = req.body;
   
-  console.log("Solicitud de restablecimiento recibida:", { usuario, email });
+  console.log("Solicitud de restablecimiento recibida para usuario:", username);
 
-  // Verificar si el usuario existe
-  const consulta = "SELECT * FROM usuarios WHERE username = $1 AND email = $2";
-  console.log("Consulta SQL:", consulta, "Valores:", [usuario, email]);
+  // Verificar si el usuario existe y obtener su correo
+  const consulta = "SELECT email FROM usuarios WHERE username = $1";
 
-  pool.query(consulta, [usuario, email], (err, resultados) => {
+  console.log("Consulta SQL:", consulta, "Valores:", [username]);
+
+  pool.query(consulta, [username], (err, resultados) => {
     if (err) {
       console.log("Error en la consulta:", err);
       return res.status(500).json({ error: "Error en la consulta" });
     }
 
     if (resultados.rows.length === 0) {
-      console.log("Usuario no encontrado:", { usuario, email });
+      console.log("Usuario no encontrado:", username);
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    console.log("Usuario encontrado:", resultados);
+    const email = resultados[0].email;
 
     // Generar token de restablecimiento
     const tokenRestablecimiento = crypto.randomBytes(6).toString('hex');
     console.log("Token generado:", tokenRestablecimiento);
     
-    // Almacenar token de restablecimiento con marca de tiempo
-    tokensRestablecimiento[usuario] = {
-      token: tokenRestablecimiento,
-      creadoEn: Date.now()
-    };
-    console.log("Tokens almacenados:", tokensRestablecimiento);
-
-    // Enviar correo
-    const opcionesCorreo = {
-      from: process.env.CORREO_USUARIO,
-      to: email,
-      subject: 'Restablecimiento de Contraseña',
-      text: `Tu código de restablecimiento de contraseña es: ${tokenRestablecimiento}\n\n` +
-            `Este código expirará en 15 minutos.`
-    };
-
-    transporter.sendMail(opcionesCorreo, (error, info) => {
-      if (error) {
-        console.log("Error al enviar el correo:", error);
-        return res.status(500).json({ error: "Error al enviar el correo" });
+    // Almacenar token en la base de datos
+    const insertarToken = "INSERT INTO tokens_restablecimiento (email, token, username) VALUES ($1, $2, $3)";
+    
+    pool.query(insertarToken, [email, tokenRestablecimiento, username], (err) => {
+      if (err) {
+        console.log("Error al guardar token:", err);
+        return res.status(500).json({ error: "Error al generar token" });
       }
+
+      // Enviar correo
+      const opcionesCorreo = {
+        from: process.env.CORREO_USUARIO,
+        to: email,
+        subject: 'Restablecimiento de Contraseña',
+        html: `
+          <html>
+            <head>
+              <style>
+                body {
+                  font-family: Arial, sans-serif;
+                  background-color: #ffffff;
+                  margin: 0;
+                  padding: 0;
+                  color: #000000;
+                }
+                .container {
+                  width: 100%;
+                  max-width: 600px;
+                  margin: 0 auto;
+                  padding: 20px;
+                  border: 2px solid #000000;
+                  box-sizing: border-box;
+                }
+                .header {
+                  text-align: center;
+                  background-color: #000000;
+                  color: #ffffff;
+                  padding: 15px;
+                }
+                .header h1 {
+                  margin: 0;
+                  font-size: 24px;
+                  font-weight: bold;
+                }
+                .content {
+                  padding: 20px;
+                  text-align: center;
+                }
+                .content p {
+                  font-size: 16px;
+                  line-height: 1.6;
+                  margin: 15px 0;
+                }
+                .code {
+                  display: inline-block;
+                  background-color: #000000;
+                  color: #ffffff;
+                  font-size: 24px;
+                  font-weight: bold;
+                  padding: 10px 20px;
+                  margin: 20px 0;
+                  letter-spacing: 2px;
+                }
+                .button {
+                  display: inline-block;
+                  background-color: #ffffff;
+                  color: #000000;
+                  padding: 12px 24px;
+                  font-size: 16px;
+                  text-decoration: none;
+                  margin-top: 20px;
+                  border: 2px solid #000000;
+                  transition: background-color 0.3s ease;
+                }
+                .button:hover {
+                  background-color: #ffffff;
+                  color: #000000;
+                  border: 2px solid #000000;
+                }
+                .footer {
+                  text-align: center;
+                  font-size: 12px;
+                  padding: 20px;
+                  border-top: 1px solid #000000;
+                }
+              </style>
+            </head>
+            <body>
+              <div class="container">
+                <div class="header">
+                  <h1>Restablecimiento de Contraseña</h1>
+                </div>
+                <div class="content">
+                  <p>Hola,</p>
+                  <p>Hemos recibido una solicitud para restablecer tu contraseña. Si no solicitaste este cambio, por favor ignora este correo.</p>
+                  <p>Tu código de restablecimiento de contraseña es:</p>
+                  <div class="code">${tokenRestablecimiento}</div>
+                  <p>Este código expirará en 15 minutos.</p>
+                  <p>Si no puedes restablecer tu contraseña o tienes alguna duda, por favor, contacta con nuestro soporte.</p>
+                  <a href="#" class="button">Restablecer Contraseña</a>
+                </div>
+                <div class="footer">
+                  <p>Si no has solicitado el restablecimiento de tu contraseña, puedes ignorar este mensaje.</p>
+                  <p>&copy; 2024 Criptografía Men y asociados S.A. de C.V. Todos los derechos reservados.</p>
+                </div>
+              </div>
+            </body>
+          </html>
+        `
+      };
       
-      console.log("Correo enviado con éxito:", info);
-      res.json({ mensaje: "Código de restablecimiento enviado" });
+      
+      transporter.sendMail(opcionesCorreo, (error, info) => {
+        if (error) {
+          console.log("Error al enviar el correo:", error);
+          return res.status(500).json({ error: "Error al enviar el correo" });
+        }
+        
+        console.log("Correo enviado con éxito");
+        res.json({ mensaje: "Código de restablecimiento enviado" });
+      });
     });
   });
 });
 
 // ------------------------------Para verificar token de restablecimiento------------------------------
 app.post('/verificar-token-restablecimiento', (req, res) => {
-  const { usuario, tokenRestablecimiento } = req.body;
+  const { username, tokenRestablecimiento } = req.body;
   
-  console.log("Verificación de token recibida:", { usuario, tokenRestablecimiento });
+  console.log("Verificación de token recibida:", { username, tokenRestablecimiento });
 
-  const tokenGuardado = tokensRestablecimiento[usuario];
-  console.log("Token guardado:", tokenGuardado);
+  // Primero, obtener el email asociado al username
+  const consultaEmail = "SELECT email FROM usuarios WHERE username = $1";
+  
+  pool.query(consultaEmail, [username], (errEmail, resultadosEmail) => {
+    if (errEmail || resultadosEmail.rows.length === 0) {
+      console.log("Error al obtener email:", errEmail);
+      return res.status(404).json({ error: "Usuario no encontrado" });
+    }
 
-  // Verificar si el token existe y no ha expirado (15 minutos)
-  if (!tokenGuardado || 
-      tokenGuardado.token !== tokenRestablecimiento || 
-      (Date.now() - tokenGuardado.creadoEn) > 15 * 60 * 1000) {
-    console.log("Token inválido o expirado:", { usuario, tokenRestablecimiento });
-    return res.status(400).json({ error: "Token inválido o expirado" });
-  }
+    const email = resultadosEmail.rows[0].email;
 
-  console.log("Token verificado correctamente");
-  res.json({ mensaje: "Token verificado correctamente" });
+    const consultaToken = `
+      SELECT * FROM tokens_restablecimiento 
+      WHERE email = $1 AND token = $2 
+      AND username = $3
+      AND TIMESTAMPDIFF(MINUTE, creado_en, NOW()) <= 15
+    `;
+
+    pool.query(consultaToken, [email, tokenRestablecimiento, username], (err, resultados) => {
+      if (err) {
+        console.log("Error al verificar token:", err);
+        return res.status(500).json({ error: "Error al verificar token" });
+      }
+
+      if (resultados.rows.length === 0) {
+        console.log("Token inválido o expirado");
+        return res.status(400).json({ error: "Token inválido o expirado" });
+      }
+
+      console.log("Token verificado correctamente");
+      res.json({ mensaje: "Token verificado correctamente" });
+    });
+  });
 });
 
 // ------------------------------Para restablecer contraseña------------------------------
 app.post('/restablecer-contrasena', (req, res) => {
-  const { usuario, tokenRestablecimiento, nuevaContraseña } = req.body;
+  const { username, tokenRestablecimiento, nuevaContraseña } = req.body;
   
-  console.log("Solicitud de restablecimiento de contraseña:", { usuario, tokenRestablecimiento, nuevaContraseña });
+  console.log("Solicitud de restablecimiento de contraseña:", { username, tokenRestablecimiento });
 
-  const tokenGuardado = tokensRestablecimiento[usuario];
-  console.log("Token guardado:", tokenGuardado);
-
-  // Verificar token nuevamente
-  if (!tokenGuardado || 
-      tokenGuardado.token !== tokenRestablecimiento || 
-      (Date.now() - tokenGuardado.creadoEn) > 15 * 60 * 1000) {
-    console.log("Token inválido o expirado:", { usuario, tokenRestablecimiento });
-    return res.status(400).json({ error: "Token inválido o expirado" });
-  }
-
-  // Actualizar contraseña en base de datos
-  const consultaActualizar = "UPDATE usuarios SET password = $1 WHERE username = $2";
-  console.log("Consulta de actualización de contraseña:", consultaActualizar, "Valores:", [nuevaContraseña, usuario]);
-
-  pool.query(consultaActualizar, [nuevaContraseña, usuario], (err, resultado) => {
-    if (err) {
-      console.log("Error al actualizar la contraseña:", err);
-      return res.status(500).json({ error: "Error al actualizar la contraseña" });
+  // Primero, obtener el email asociado al username
+  const consultaEmail = "SELECT email FROM usuarios WHERE username = $1";
+  
+  pool.query(consultaEmail, [username], (errEmail, resultadosEmail) => {
+    if (errEmail || resultadosEmail.rows.length === 0) {
+      console.log("Error al obtener email:", errEmail);
+      return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    // Eliminar el token de restablecimiento utilizado
-    delete tokensRestablecimiento[usuario];
-    console.log("Token eliminado:", usuario);
+    const email = resultadosEmail.rows[0].email;
 
-    res.json({ mensaje: "Contraseña restablecida exitosamente" });
+    const consultaToken = `
+      SELECT * FROM tokens_restablecimiento 
+      WHERE email = $1 AND token = $2 
+      AND username = $3
+      AND TIMESTAMPDIFF(MINUTE, creado_en, NOW()) <= 15
+    `;
+
+    pool.query(consultaToken, [email, tokenRestablecimiento, username], (err, resultados) => {
+      if (err) {
+        console.log("Error al verificar token:", err);
+        return res.status(500).json({ error: "Error al verificar token" });
+      }
+
+      if (resultados.rows.length === 0) {
+        console.log("Token inválido o expirado");
+        return res.status(400).json({ error: "Token inválido o expirado" });
+      }
+      // Actualizar contraseña en base de datos
+      const consultaActualizar = "UPDATE usuarios SET password = $1 WHERE username = $2";
+      console.log("Consulta de actualización de contraseña:", consultaActualizar, "Valores:", [nuevaContraseña, username]);
+
+      pool.query(consultaActualizar, [nuevaContraseña, username], (err, resultado) => {
+        if (err) {
+          console.log("Error al actualizar la contraseña:", err);
+          return res.status(500).json({ error: "Error al actualizar la contraseña" });
+        }
+
+          // Actualizar contraseña en base de datos
+          const consultaActualizar = "UPDATE usuarios SET password = $1 WHERE username = $2";
+
+          pool.query(consultaActualizar, [nuevaContraseña, username], (err) => {
+            if (err) {
+              console.log("Error al actualizar la contraseña:", err);
+              return res.status(500).json({ error: "Error al actualizar la contraseña" });
+            }
+
+            // Eliminar token utilizado
+            const eliminarToken = "DELETE FROM tokens_restablecimiento WHERE email = $1 AND token = $2";
+            pool.query(eliminarToken, [email, tokenRestablecimiento]);
+
+            res.json({ mensaje: "Contraseña restablecida exitosamente" });
+          });
+        });
+      });
   });
 });
+
 
 // Iniciar el servidor
 app.listen(PORT, () => {
