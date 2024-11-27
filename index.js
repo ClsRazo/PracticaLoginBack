@@ -377,34 +377,36 @@ app.post('/restablecer-contrasena', (req, res) => {
         console.log("Token inválido o expirado");
         return res.status(400).json({ error: "Token inválido o expirado" });
       }
-  // Actualizar contraseña en base de datos
-  const consultaActualizar = "UPDATE usuarios SET password = $1 WHERE username = $2";
-  console.log("Consulta de actualización de contraseña:", consultaActualizar, "Valores:", [nuevaContraseña, username]);
-
-  pool.query(consultaActualizar, [nuevaContraseña, username], (err, resultado) => {
-    if (err) {
-      console.log("Error al actualizar la contraseña:", err);
-      return res.status(500).json({ error: "Error al actualizar la contraseña" });
-    }
-
       // Actualizar contraseña en base de datos
       const consultaActualizar = "UPDATE usuarios SET password = $1 WHERE username = $2";
+      console.log("Consulta de actualización de contraseña:", consultaActualizar, "Valores:", [nuevaContraseña, username]);
 
-      pool.query(consultaActualizar, [nuevaContraseña, username], (err) => {
+      pool.query(consultaActualizar, [nuevaContraseña, username], (err, resultado) => {
         if (err) {
           console.log("Error al actualizar la contraseña:", err);
           return res.status(500).json({ error: "Error al actualizar la contraseña" });
         }
 
-        // Eliminar token utilizado
-        const eliminarToken = "DELETE FROM tokens_restablecimiento WHERE email = $1 AND token = $2";
-        pool.query(eliminarToken, [email, tokenRestablecimiento]);
+          // Actualizar contraseña en base de datos
+          const consultaActualizar = "UPDATE usuarios SET password = $1 WHERE username = $2";
 
-        res.json({ mensaje: "Contraseña restablecida exitosamente" });
+          pool.query(consultaActualizar, [nuevaContraseña, username], (err) => {
+            if (err) {
+              console.log("Error al actualizar la contraseña:", err);
+              return res.status(500).json({ error: "Error al actualizar la contraseña" });
+            }
+
+            // Eliminar token utilizado
+            const eliminarToken = "DELETE FROM tokens_restablecimiento WHERE email = $1 AND token = $2";
+            pool.query(eliminarToken, [email, tokenRestablecimiento]);
+
+            res.json({ mensaje: "Contraseña restablecida exitosamente" });
+          });
+        });
       });
-    });
   });
 });
+
 
 // Iniciar el servidor
 app.listen(PORT, () => {
