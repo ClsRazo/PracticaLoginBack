@@ -210,7 +210,7 @@ app.post("/verificacion", (req, res) => {
         <body>
           <div class="container">
             <div class="header">
-              <img src="img/LogoCentro.png" alt="Logo RegiSecure">
+              <img src="cid:logo" alt="Logo RegiSecure">
               <h1>Verificación de Correo</h1>
             </div>
             <div class="content">
@@ -227,7 +227,13 @@ app.post("/verificacion", (req, res) => {
           </div>
         </body>
       </html>
-    `
+    `,
+    attachments: [
+      {
+        filename: 'LogoCentro.png',
+        path: 'img/LogoCentro.png',
+        cid: 'logo'
+      }]
 
   };
 
