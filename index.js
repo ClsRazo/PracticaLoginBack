@@ -447,12 +447,16 @@ app.post('/verificar-token-restablecimiento', (req, res) => {
 
     const email = resultadosEmail.rows[0].email;
 
-    const consultaToken = `
-      SELECT * FROM tokens_restablecimiento 
-      WHERE email = $1 AND token = $2 
-      AND username = $3
-      AND TIMESTAMPDIFF(MINUTE, creado_en, NOW()) <= 15
-    `;
+    // const consultaToken = `
+    //   SELECT * FROM tokens_restablecimiento 
+    //   WHERE email = $1 AND token = $2 
+    //   AND username = $3
+    //   AND TIMESTAMPDIFF(MINUTE, creado_en, NOW()) <= 15
+    // `;
+
+    const consultaToken = `SELECT * FROM tokens_restablecimiento
+    WHERE email = $1 AND token = $2 AND username = $3
+    AND EXTRACT(EPOCH FROM NOW() - creado_en) / 60 <= 15`;
 
     pool.query(consultaToken, [email, tokenRestablecimiento, username], (err, resultados) => {
       if (err) {
