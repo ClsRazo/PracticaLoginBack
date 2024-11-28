@@ -162,6 +162,7 @@ app.post("/verificacion", (req, res) => {
               margin: 0;
               font-size: 24px;
               font-weight: bold;
+              color: #e7d9ff;
             }
             .content {
               padding: 20px;
@@ -346,6 +347,7 @@ app.post('/solicitar-restablecimiento', (req, res) => {
                   margin: 0;
                   font-size: 24px;
                   font-weight: bold;
+                  color: #e7d9ff;
                 }
                 .content {
                   padding: 20px;
