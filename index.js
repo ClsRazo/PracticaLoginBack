@@ -293,7 +293,7 @@ app.post('/solicitar-restablecimiento', (req, res) => {
       return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
-    const email = resultados[0].email;
+    const email = resultados.rows[0].email;
 
     // Generar token de restablecimiento
     const tokenRestablecimiento = crypto.randomBytes(6).toString('hex');
