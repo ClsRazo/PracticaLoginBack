@@ -231,7 +231,8 @@ app.post("/verificacion", (req, res) => {
     }
 
     console.log("Correo enviado con éxito");
-    res.json({token: tokenRestablecimiento, hora: new Date().toISOString(), expira: new Date(Date.now() + 15 * 60 * 1000).toISOString()}, email);
+    res.status(200).json({message: "Correo enviado con éxito", token: tokenRestablecimiento, hora: new Date().toISOString(), expira: new Date(Date.now() + 15 * 60 * 1000).toISOString()});
+    // res.json({token: tokenRestablecimiento, hora: new Date().toISOString(), expira: new Date(Date.now() + 15 * 60 * 1000).toISOString()}, email);
   });
 
 });
