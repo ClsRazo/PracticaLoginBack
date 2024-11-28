@@ -134,24 +134,29 @@ app.post("/verificacion", (req, res) => {
           <style>
             body {
               font-family: Arial, sans-serif;
-              background-color: #ffffff;
+              background-color: #e7d9ff;
               margin: 0;
               padding: 0;
-              color: #000000;
+              color: #200232;
             }
             .container {
               width: 100%;
               max-width: 600px;
               margin: 0 auto;
               padding: 20px;
-              border: 2px solid #000000;
+              border: 2px solid #200232;
               box-sizing: border-box;
             }
             .header {
               text-align: center;
-              background-color: #000000;
-              color: #ffffff;
+              background-color: #200232;
+              color: #e7d9ff;
               padding: 15px;
+            }
+            .header img {
+              width: 100px; /* Puedes ajustar el tamaño aquí */
+              height: auto;
+              margin-bottom: 10px; /* Espacio debajo del logo */
             }
             .header h1 {
               margin: 0;
@@ -169,8 +174,8 @@ app.post("/verificacion", (req, res) => {
             }
             .code {
               display: inline-block;
-              background-color: #000000;
-              color: #ffffff;
+              background-color: #200232;
+              color: #e7d9ff;
               font-size: 24px;
               font-weight: bold;
               padding: 10px 20px;
@@ -179,31 +184,32 @@ app.post("/verificacion", (req, res) => {
             }
             .button {
               display: inline-block;
-              background-color: #ffffff;
-              color: #000000;
+              background-color: #e7d9ff;
+              color: #200232;
               padding: 12px 24px;
               font-size: 16px;
               text-decoration: none;
               margin-top: 20px;
-              border: 2px solid #000000;
+              border: 2px solid #200232;
               transition: background-color 0.3s ease;
             }
             .button:hover {
-              background-color: #ffffff;
-              color: #000000;
-              border: 2px solid #000000;
+              background-color: #e7d9ff;
+              color: #200232;
+              border: 2px solid #200232;
             }
             .footer {
               text-align: center;
               font-size: 12px;
               padding: 20px;
-              border-top: 1px solid #000000;
+              border-top: 1px solid #200232;
             }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
+              <img src="img/LogoCentro.png" alt="Logo RegiSecure">
               <h1>Verificación de Correo</h1>
             </div>
             <div class="content">
@@ -215,7 +221,7 @@ app.post("/verificacion", (req, res) => {
             </div>
             <div class="footer">
               <p>Si no has solicitado la verificación de tu correo, puedes ignorar este mensaje.</p>
-              <p>&copy; 2024 Criptografía Men y asociados S.A. de C.V. Todos los derechos reservados.</p>
+              <p>&copy; 2024 RegiSecure. Todos los derechos reservados.</p>
             </div>
           </div>
         </body>
@@ -312,24 +318,29 @@ app.post('/solicitar-restablecimiento', (req, res) => {
               <style>
                 body {
                   font-family: Arial, sans-serif;
-                  background-color: #ffffff;
+                  background-color: #e7d9ff;
                   margin: 0;
                   padding: 0;
-                  color: #000000;
+                  color: #200232;
                 }
                 .container {
                   width: 100%;
                   max-width: 600px;
                   margin: 0 auto;
                   padding: 20px;
-                  border: 2px solid #000000;
+                  border: 2px solid #200232;
                   box-sizing: border-box;
                 }
                 .header {
                   text-align: center;
-                  background-color: #000000;
-                  color: #ffffff;
+                  background-color: #200232;
+                  color: #e7d9ff;
                   padding: 15px;
+                }
+                .header img {
+                  width: 100px; /* Puedes ajustar el tamaño aquí */
+                  height: auto;
+                  margin-bottom: 10px; /* Espacio debajo del logo */
                 }
                 .header h1 {
                   margin: 0;
@@ -347,8 +358,8 @@ app.post('/solicitar-restablecimiento', (req, res) => {
                 }
                 .code {
                   display: inline-block;
-                  background-color: #000000;
-                  color: #ffffff;
+                  background-color: #200232;
+                  color: #e7d9ff;
                   font-size: 24px;
                   font-weight: bold;
                   padding: 10px 20px;
@@ -357,31 +368,32 @@ app.post('/solicitar-restablecimiento', (req, res) => {
                 }
                 .button {
                   display: inline-block;
-                  background-color: #ffffff;
-                  color: #000000;
+                  background-color: #e7d9ff;
+                  color: #200232;
                   padding: 12px 24px;
                   font-size: 16px;
                   text-decoration: none;
                   margin-top: 20px;
-                  border: 2px solid #000000;
+                  border: 2px solid #200232;
                   transition: background-color 0.3s ease;
                 }
                 .button:hover {
-                  background-color: #ffffff;
-                  color: #000000;
-                  border: 2px solid #000000;
+                  background-color: #e7d9ff;
+                  color: #200232;
+                  border: 2px solid #200232;
                 }
                 .footer {
                   text-align: center;
                   font-size: 12px;
                   padding: 20px;
-                  border-top: 1px solid #000000;
+                  border-top: 1px solid #200232;
                 }
               </style>
             </head>
             <body>
               <div class="container">
                 <div class="header">
+                  <img src="img/LogoCentro.png" alt="Logo RegiSecure">
                   <h1>Restablecimiento de Contraseña</h1>
                 </div>
                 <div class="content">
@@ -391,11 +403,10 @@ app.post('/solicitar-restablecimiento', (req, res) => {
                   <div class="code">${tokenRestablecimiento}</div>
                   <p>Este código expirará en 15 minutos.</p>
                   <p>Si no puedes restablecer tu contraseña o tienes alguna duda, por favor, contacta con nuestro soporte.</p>
-                  <a href="#" class="button">Restablecer Contraseña</a>
                 </div>
                 <div class="footer">
                   <p>Si no has solicitado el restablecimiento de tu contraseña, puedes ignorar este mensaje.</p>
-                  <p>&copy; 2024 Criptografía Men y asociados S.A. de C.V. Todos los derechos reservados.</p>
+                  <p>&copy; 2024 RegiSecure. Todos los derechos reservados.</p>
                 </div>
               </div>
             </body>
